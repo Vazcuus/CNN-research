@@ -23,8 +23,8 @@ class Network1():
     self.num_images = data['num_images']
     
     self.hidden_size = ((self.input_rows - self.kernel_rows) * (self.input_cols - self.kernel_cols)) * self.num_kernels
-    self.kernels = 0.02*np.random.random((self.kernel_rows*self.kernel_cols, self.num_kernels))-0.01
-    self.weights_l_2 = 0.2*np.random.random((self.hidden_size, self.num_labels)) - 0.1
+    self.kernels = np.random.randn(self.kernel_rows*self.kernel_cols, self.num_kernels)* np.sqrt(2.0 / self.kernel_rows*self.kernel_cols)
+    self.weights_l_2 = np.random.randn(self.hidden_size, self.num_labels) * np.sqrt(2.0 / self.hidden_size)
 
   def get_image_section_single(self, layer, row_from, row_to, col_from, col_to):
     section = layer[row_from:row_to, col_from:col_to]  
@@ -35,6 +35,13 @@ class Network1():
   
   def relu_deriv(self, x):
     return (x >= 0).astype(float)
+  
+  def sigmoid(self, x):
+    return 1 / (1 + np.exp(-x))
+  
+  def sigmoid_derivative(self, x):
+    s = self.sigmoid(x)
+    return s * (1 - s)
   
   def training(self):
     num_images = 0
@@ -59,12 +66,14 @@ class Network1():
       list2 = np.empty((fragments2.shape[0], fragments2.shape[1]), dtype=object)
       for ii in range(fragments1.shape[0]):
         for iii in range(3):
-          list1[ii][iii] = img_func.get_vector_img(fragments1[ii], iii)
-          list2[ii][iii] = img_func.get_vector_img(fragments2[ii], iii)
+          list1[ii][iii] = img_func.get_vector_img(fragments1[ii], iii) / 255.0
+          list2[ii][iii] = img_func.get_vector_img(fragments2[ii], iii) / 255.0
 
       for ii in range(self.iterations):
+        print(i)
         for iii in range(list1.shape[0]):
           for iiii in range(3):
+            
             #print("image:", i, "  iteration:", ii, "  fragment:", iii * 3 + iiii)
             layer_0 = list1[iii][iiii].reshape((self.input_rows, self.input_cols)) 
             
@@ -84,18 +93,35 @@ class Network1():
 
             kernel_output = flattened_input.dot(self.kernels) 
 
-            layer_l = self.relu(kernel_output.reshape(-1))  
+            layer_l = self.sigmoid(kernel_output.reshape(-1))  
 
             layer_2 = np.dot(layer_l, self.weights_l_2)
 
             layer_2_delta = (list2[iii][iiii] - layer_2)
-            layer_l_delta = layer_2_delta.dot(self.weights_l_2.T) * self.relu_deriv(layer_l)
+            layer_l_delta = layer_2_delta.dot(self.weights_l_2.T) * self.sigmoid_derivative(layer_l)
 
             kernel_delta = layer_l_delta.reshape(kernel_output.shape)
             kernels_gradient = flattened_input.T.dot(kernel_delta)
+            kernels_gradient = np.clip(kernels_gradient, -1, 1)
             self.kernels -= self.alpha * kernels_gradient
 
             self.weights_l_2 += self.alpha * np.outer(layer_l, layer_2_delta)
+
+            if((iii * 3 + iiii) == 999):
+              img_func.show_img(layer_0 * 255)
+              layer_2 = layer_2.reshape((50, 50))
+              print(layer_2)
+              img_func.show_img(layer_2 * 255)
+            if((iii * 3 + iiii) == 1500):
+              img_func.show_img(layer_0 * 255)
+              layer_2 = layer_2.reshape((50, 50))
+              print(layer_2)
+              img_func.show_img(layer_2 * 255)
+            if((iii * 3 + iiii) == 2000):
+              img_func.show_img(layer_0 * 255)
+              layer_2 = layer_2.reshape((50, 50))
+              print(layer_2)
+              img_func.show_img(layer_2 * 255)
 
 
 x = 25
