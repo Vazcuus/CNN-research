@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 def open_image(file_path=None):
     if file_path is None:
         file_path = input("Введите путь к изображению: ")
-    
+        
     img = Image.open(file_path).convert('RGB')
     return img
 
@@ -88,9 +88,9 @@ def collect_img(fragments, x, y):
       jj = 0
   return img
 
-
 def show_img(img):
     plt.figure(figsize=(10, 8))
     plt.imshow(img)
     plt.axis('off')  
     plt.show()
+
