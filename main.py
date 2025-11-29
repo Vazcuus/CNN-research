@@ -26,6 +26,16 @@ class Network1():
     self.kernels = 0.02*np.random.random((self.kernel_rows*self.kernel_cols, self.num_kernels))-0.01
     self.weights_l_2 = 0.2*np.random.random((self.hidden_size, self.num_labels)) - 0.1
 
+  def get_image_section_single(self, layer, row_from, row_to, col_from, col_to):
+    section = layer[row_from:row_to, col_from:col_to]  
+    return section.reshape(1, row_to - row_from, col_to - col_from)
+  
+  def relu(self, x):
+    return np.maximum(0, x)
+  
+  def relu_deriv(self, x):
+    return (x >= 0).astype(float)
+  
   def training(self):
     num_images = 0
 
@@ -55,15 +65,44 @@ class Network1():
       for ii in range(self.iterations):
         for iii in range(list1.shape[0]):
           for iiii in range(3):
-            print("image:", i, "  iteration:", ii, "  fragment:", iii * 3 + iiii)
-      
+            #print("image:", i, "  iteration:", ii, "  fragment:", iii * 3 + iiii)
+            layer_0 = list1[iii][iiii].reshape((self.input_rows, self.input_cols)) 
+            
+            sects = list()
+            for row_start in range(layer_0.shape[0] - self.kernel_rows):  
+                for col_start in range(layer_0.shape[1] - self.kernel_cols):  
+                    sect = self.get_image_section_single(layer_0,  
+                                                         row_start, 
+                                                         row_start + self.kernel_rows, 
+                                                         col_start, 
+                                                         col_start + self.kernel_cols)
+                    sects.append(sect)
+
+            expanded_input = np.concatenate(sects, axis=0)  
+            es = expanded_input.shape
+            flattened_input = expanded_input.reshape(es[0], -1)
+
+            kernel_output = flattened_input.dot(self.kernels) 
+
+            layer_l = self.relu(kernel_output.reshape(-1))  
+
+            layer_2 = np.dot(layer_l, self.weights_l_2)
+
+            layer_2_delta = (list2[iii][iiii] - layer_2)
+            layer_l_delta = layer_2_delta.dot(self.weights_l_2.T) * self.relu_deriv(layer_l)
+
+            kernel_delta = layer_l_delta.reshape(kernel_output.shape)
+            kernels_gradient = flattened_input.T.dot(kernel_delta)
+            self.kernels -= self.alpha * kernels_gradient
+
+            self.weights_l_2 += self.alpha * np.outer(layer_l, layer_2_delta)
 
 
 x = 25
 y = 25
 
 data = {
-  'alpha' : 2,
+  'alpha' : 0.001,
   'iterations' : 1,
   'pixels_per_image' : x * y,
   'kernel_rows' : 3,
@@ -80,6 +119,8 @@ data = {
 }
 
 N = Network1(data)
+print(N.kernels)
+print("___________________________________________________")
 N.training()
-
+print('end')
 
