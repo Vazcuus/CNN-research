@@ -37,6 +37,7 @@ class Network1():
     return (x >= 0).astype(float)
   
   def sigmoid(self, x):
+    x = np.clip(x, -500, 500)
     return 1 / (1 + np.exp(-x))
   
   def sigmoid_derivative(self, x):
@@ -47,6 +48,8 @@ class Network1():
     num_images = 0
 
     for i in os.listdir(self.low_dir):
+      print(i)
+
       if(num_images == self.num_images): break
       num_images += 1
       
@@ -70,7 +73,7 @@ class Network1():
           list2[ii][iii] = img_func.get_vector_img(fragments2[ii], iii) / 255.0
 
       for ii in range(self.iterations):
-        print(i)
+        
         for iii in range(list1.shape[0]):
           for iiii in range(3):
             
@@ -98,30 +101,79 @@ class Network1():
             layer_2 = np.dot(layer_l, self.weights_l_2)
 
             layer_2_delta = (list2[iii][iiii] - layer_2)
+            layer_2_delta = np.clip(layer_2_delta, -1, 1)
             layer_l_delta = layer_2_delta.dot(self.weights_l_2.T) * self.sigmoid_derivative(layer_l)
 
             kernel_delta = layer_l_delta.reshape(kernel_output.shape)
             kernels_gradient = flattened_input.T.dot(kernel_delta)
             kernels_gradient = np.clip(kernels_gradient, -1, 1)
+
             self.kernels -= self.alpha * kernels_gradient
 
             self.weights_l_2 += self.alpha * np.outer(layer_l, layer_2_delta)
 
-            if((iii * 3 + iiii) == 999):
-              img_func.show_img(layer_0 * 255)
-              layer_2 = layer_2.reshape((50, 50))
-              print(layer_2)
-              img_func.show_img(layer_2 * 255)
-            if((iii * 3 + iiii) == 1500):
-              img_func.show_img(layer_0 * 255)
-              layer_2 = layer_2.reshape((50, 50))
-              print(layer_2)
-              img_func.show_img(layer_2 * 255)
-            if((iii * 3 + iiii) == 2000):
-              img_func.show_img(layer_0 * 255)
-              layer_2 = layer_2.reshape((50, 50))
-              print(layer_2)
-              img_func.show_img(layer_2 * 255)
+  def test(self, path):
+    img = img_func.open_image(path)
+
+    matrix = img_func.get_matrix_img(img)
+
+    expanded_matrix = img_func.expand_matrix(matrix, self.input_rows, self.input_cols)
+
+    fragments = img_func.cut_matrix(expanded_matrix, self.input_rows, self.input_cols)
+
+    list1 = np.empty((fragments.shape[0], 3), dtype=object)
+    list2 = np.empty((fragments.shape[0], 3), dtype=object)
+
+    for i in range(fragments.shape[0]):
+      for ii in range(3):
+        list1[i][ii] = img_func.get_vector_img(fragments[i], ii) / 255.0
+
+    for i in range(list1.shape[0]):
+      for ii in range(3):
+        layer_0 = list1[i][ii].reshape((self.input_rows, self.input_cols)) 
+        
+        sects = list()
+        for row_start in range(layer_0.shape[0] - self.kernel_rows):  
+          for col_start in range(layer_0.shape[1] - self.kernel_cols):  
+            sect = self.get_image_section_single(layer_0,  
+                                                  row_start, 
+                                                  row_start + self.kernel_rows, 
+                                                  col_start, 
+                                                  col_start + self.kernel_cols)
+            sects.append(sect)
+
+        expanded_input = np.concatenate(sects, axis=0)  
+        es = expanded_input.shape
+        flattened_input = expanded_input.reshape(es[0], -1)
+
+        kernel_output = flattened_input.dot(self.kernels) 
+
+        layer_l = self.sigmoid(kernel_output.reshape(-1))  
+
+        layer_2 = np.dot(layer_l, self.weights_l_2)
+
+        layer_2 *= 255 
+
+        list2[i][ii] = layer_2
+    
+    filtered_fragments_list = np.empty((list2.shape[0], 3), dtype=object)
+    for i in range(fragments.shape[0]):
+      for ii in range(3):
+        filtered_fragments_list[i][ii] = img_func.get_img_vector(list2[i][ii], self.output_rows, self.output_cols, ii)
+    
+
+    fragments_list = np.empty((filtered_fragments_list.shape[0]), dtype=object)
+    for i in range(filtered_fragments_list.shape[0]):
+      fragments_list[i] = img_func.merge_filtered_img(filtered_fragments_list[i])
+
+    expanded_matrix_list = img_func.collect_img(fragments_list, expanded_matrix.shape[0] / self.input_rows, expanded_matrix.shape[1] / self.input_cols)
+
+    matrix_list = img_func.reduction_matrix(expanded_matrix_list, matrix.shape[0] * 2, matrix.shape[1] * 2)
+
+    img_func.show_img(matrix_list)
+
+
+
 
 
 x = 25
@@ -148,5 +200,7 @@ N = Network1(data)
 print(N.kernels)
 print("___________________________________________________")
 N.training()
+print("___________________________________________________")
+N.test("D:\\projects\\study\\5th_semester\\UIRS\\data\\Low_Resolution\\image_000001.jpg")
 print('end')
 
