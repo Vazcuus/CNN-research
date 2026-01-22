@@ -94,3 +94,52 @@ def show_img(img):
     plt.axis('off')  
     plt.show()
 
+def show_imgs(img1, img2):
+
+    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+    axes[0].imshow(img1)
+    axes[0].axis('off')
+
+    axes[1].imshow(img2)
+    axes[1].axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+def get_grey_matri(img, chanal):
+  grey_matrix = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8)
+  for i in range(img.shape[0]):
+    for ii in range(img.shape[1]):
+      grey_matrix[i][ii] = img[i][ii][chanal]
+  return grey_matrix
+
+def get_edges(img, num):
+  new_img = np.empty((img.shape[0] + num * 2, img.shape[1] + num * 2, img.shape[2]), dtype=np.uint8)
+  for i in range(0, img.shape[0]):
+    for ii in range(0, img.shape[1]):
+      new_img[i + num][ii + num] = img[i][ii]
+
+  for i in range(num):
+    for ii in range(img.shape[1]):
+      new_img[i][ii + num] = img[0][ii]
+
+  for i in range(num):
+    for ii in range(img.shape[1]):
+      new_img[i][ii + num] = img[0][ii]
+      new_img[new_img.shape[0] - i - 1][ii + num] = img[-1][ii]
+
+  for i in range(num):
+    for ii in range(img.shape[0]):
+      new_img[ii + num][i] = img[ii][0]
+      new_img[ii + num][new_img.shape[1] - i - 1] = img[ii][-1]
+
+  for i in range(num):
+    for ii in range(num):
+      new_img[i][ii] = img[0][0]
+      new_img[i][new_img.shape[1] - ii - 1] = img[0][-1]
+      new_img[new_img.shape[0] - i - 1][ii] = img[-1][0]
+      new_img[new_img.shape[0] - i - 1][new_img.shape[1] - ii - 1] = img[-1][-1]
+
+  return new_img
+
