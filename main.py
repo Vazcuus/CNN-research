@@ -130,17 +130,17 @@ if choise == 5:
     'batch_size': 1,
     'low_dir' : "D:\\projects\\study\\5th_semester\\UIRS\\data\\Low_Resolution",
     'high_dir' : "D:\\projects\\study\\5th_semester\\UIRS\\data\\High_Resolution",
-    'weights_file' : "model_weights"
+    'weights_file' : "model_weights_2"
   }
 
-  model = net_5.EnhancedCNN(config)
+  model = net_5.Network5(config)
+  model.load_weights_npz('model_weights.npz')
+
+  #model.train(num_images=1)
+
+  #model.save_weights_npz('model_weights_2')
   #model.load_weights_npz('model_weights.npz')
 
-  model.train(num_images=1)
-
-  model.save_weights_npz('model_weights_for_1')
-  #model.load_weights_npz('model_weights.npz')
-
-  enhanced = model.enhance_image('D:\\projects\\study\\5th_semester\\UIRS\\data\\High_Resolution\\image_000001.jpg',
+  enhanced = model.enhance_image('D:\\projects\\study\\5th_semester\\UIRS\\data\\High_Resolution\\image_000005.jpg',
                                   #'D:\\projects\\study\\5th_semester\\UIRS\\data\\enhanced_image3_net5.jpg',
-                                  'D:\\projects\\study\\5th_semester\\UIRS\\data\\enhanced_image3_net5.jpg')
+                                  'D:\\projects\\study\\5th_semester\\UIRS\\data\\enhanced_image_000005_1_net5.jpg')
